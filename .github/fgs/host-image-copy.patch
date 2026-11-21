@@ -28,3 +28,4 @@
 +            (p->vkctx.extensions & FF_VK_EXT_HOST_IMAGE_COPY) &&
              !(hwctx->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR))
              hwctx->usage |= supported_usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT;
+ 
