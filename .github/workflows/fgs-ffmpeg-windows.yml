@@ -1,0 +1,117 @@
+name: FGS FFmpeg Windows x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/fgs-ffmpeg-windows.yml"
+      - ".github/fgs/**"
+  schedule:
+    - cron: "0 22 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fgs-ffmpeg-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: \${{ matrix.channel.name }} Windows x64
+    runs-on: windows-2025
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        channel:
+          - name: Master
+            ref: master
+          - name: Stable
+            ref: release/9.1
+    steps:
+      - name: Checkout FGS build scripts
+        uses: actions/checkout@v4
+        with:
+          path: fgs-build
+          persist-credentials: false
+      - name: Checkout upstream FFmpeg
+        uses: actions/checkout@v4
+        with:
+          repository: FFmpeg/FFmpeg
+          ref: \${{ matrix.channel.ref }}
+          path: ffmpeg-src
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Apply verified Vulkan/CUDA interoperability patch
+        shell: bash
+        run: |
+          git -C ffmpeg-src apply --check ../fgs-build/.github/fgs/host-image-copy.patch
+          git -C ffmpeg-src apply ../fgs-build/.github/fgs/host-image-copy.patch
+          git -C ffmpeg-src diff --check
+          git -C ffmpeg-src diff --stat
+      - name: Set up native Windows UCRT64 toolchain and codecs
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            git
+            diffutils
+            pkgconf
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-clang
+            mingw-w64-ucrt-x86_64-binutils
+            mingw-w64-ucrt-x86_64-nasm
+            mingw-w64-ucrt-x86_64-ffnvcodec-headers
+            mingw-w64-ucrt-x86_64-amf-headers
+            mingw-w64-ucrt-x86_64-vulkan-headers
+            mingw-w64-ucrt-x86_64-vulkan-loader
+            mingw-w64-ucrt-x86_64-shaderc
+            mingw-w64-ucrt-x86_64-libplacebo
+            mingw-w64-ucrt-x86_64-svt-av1
+            mingw-w64-ucrt-x86_64-aom
+            mingw-w64-ucrt-x86_64-dav1d
+            mingw-w64-ucrt-x86_64-libvpx
+            mingw-w64-ucrt-x86_64-libx264
+            mingw-w64-ucrt-x86_64-x265
+            mingw-w64-ucrt-x86_64-opus
+            mingw-w64-ucrt-x86_64-libvorbis
+            mingw-w64-ucrt-x86_64-lame
+            mingw-w64-ucrt-x86_64-libass
+            mingw-w64-ucrt-x86_64-fontconfig
+            mingw-w64-ucrt-x86_64-freetype
+            mingw-w64-ucrt-x86_64-zimg
+            mingw-w64-ucrt-x86_64-libsoxr
+            mingw-w64-ucrt-x86_64-libjxl
+            mingw-w64-ucrt-x86_64-libwebp
+            mingw-w64-ucrt-x86_64-openjpeg2
+            mingw-w64-ucrt-x86_64-srt
+            mingw-w64-ucrt-x86_64-gnutls
+            mingw-w64-ucrt-x86_64-libvpl
+      - name: Build FFmpeg and verify required capabilities
+        shell: msys2 {0}
+        run: |
+          bash fgs-build/.github/fgs/build.sh ffmpeg-src "\${{ matrix.channel.name }}"
+      - name: Package all required DLLs for portable use
+        shell: pwsh
+        run: |
+          python fgs-build/.github/fgs/package.py --prefix "stage/\${{ matrix.channel.name }}" --out "dist/FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64"
+      - name: Check portable FFmpeg outside MSYS2 environment
+        shell: pwsh
+        run: |
+          $p = "dist/FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64"
+          & "$p/ffmpeg.exe" -version
+          if ($LASTEXITCODE -ne 0) { throw "Portable FFmpeg executable failed." }
+          & "$p/ffprobe.exe" -version
+          if ($LASTEXITCODE -ne 0) { throw "Portable FFprobe executable failed." }
+      - name: Upload tested Windows binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64
+          path: dist/FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
