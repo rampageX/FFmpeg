@@ -36,6 +36,11 @@ docker run --rm -e WINEDEBUG=-all -v "$root/unpack":/test:ro \
       wine "$1" -hide_banner -filters > /tmp/fgs-filters.txt
       wine "$1" -hide_banner -encoders > /tmp/fgs-encoders.txt
       wine "$2" -version > /dev/null
+      wine "$1" -version > /tmp/fgs-version.txt
+      if [ "$3" = "Stable" ]; then
+          grep -Eq "^ffmpeg version 9[.]1[.]git-FGS-[0-9a-f]+-[0-9]{8}" /tmp/fgs-version.txt ||
+              { echo "Missing Stable 9.1.git branch version identifier" >&2; exit 1; }
+      fi
       for name in fruc_vulkan libplacebo bwdif_cuda bwdif_vulkan; do
           grep -Eq "[[:space:]]${name}[[:space:]]" /tmp/fgs-filters.txt || { echo "Missing filter: $name" >&2; exit 1; }
       done
@@ -43,7 +48,7 @@ docker run --rm -e WINEDEBUG=-all -v "$root/unpack":/test:ro \
           grep -Eq "[[:space:]]${name}[[:space:]]" /tmp/fgs-encoders.txt || { echo "Missing encoder: $name" >&2; exit 1; }
       done
       echo "Static executable and FGS codec/filter checks passed"
-    ' _ "$ff_path" "$fp_path"
+    ' _ "$ff_path" "$fp_path" "$CHANNEL"
 
 out="FGS-FFmpeg-${CHANNEL}-Windows-x64-Static.zip"
 mv "${archives[0]}" "$out"

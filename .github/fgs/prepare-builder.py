@@ -14,6 +14,17 @@ new = r"""    cd ffmpeg
     git apply "/patches/ffmpeg/\$BRANCH_NAME.patch"
     git diff --check
 
+    # Keep master on Git revision identifiers. Stable snapshots retain the
+    # official 9.1.git release-branch identity plus traceable commit SHA.
+    if [ '$GIT_BRANCH' = 'release/9.1' ]; then
+        release=\$(cat RELEASE)
+        if [ "\$release" != "9.1.git" ]; then
+            echo "Unexpected FFmpeg stable RELEASE: \$release" >&2
+            exit 1
+        fi
+        printf '%s\n' "\$release-FGS-\$(git rev-parse --short=12 HEAD)" > FF_VERSION
+    fi
+
     ./configure"""
 assert s.count(old) == 1, "FFmpeg-Builds build.sh anchor changed"
 s = s.replace(old, new, 1)

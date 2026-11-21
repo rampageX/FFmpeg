@@ -8,6 +8,7 @@ This fork builds portable **static Windows x64** FFmpeg from the official FFmpeg
 - Only `win64-gpl` is built. This is the original upstream static MinGW cross-compilation image with stock `AOMediaCodec/SVT-AV1`, not the SVT-AV1-HDR branch.
 - `.github/fgs/prepare-builder.py` ports the small patch-injection mechanism used by QuickFatHedgehog's FFmpeg-Builds fork into the original static build script. It does not rebuild the upstream image.
 - Master uses official FFmpeg `master`; Stable uses official `release/9.1`.
+- Stable reports `9.1.git-FGS-<upstream SHA>-<build date>` in `ffmpeg -version`. The `.git` suffix is intentional: this is the official release branch snapshot, not a tagged 9.1 source release. Master retains the upstream `N-...` identifier.
 - Both use the original verified patch `.github/fgs/host-image-copy.patch`, adding Vulkan option `disable_host_image_copy=1` (default unchanged).
 
 ## Build and checks
