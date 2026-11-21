@@ -13,7 +13,7 @@ This fork builds portable **static Windows x64** FFmpeg from the official FFmpeg
 
 ## Build and checks
 
-Open **Actions > FGS FFmpeg Static Windows x64 > Run workflow**. The workflow also triggers for recipe changes and weekly. Each run produces independent Master/Stable Windows x64 portable static ZIP artifacts.
+Open **Actions > FGS FFmpeg Static Windows x64 > Run workflow** for a manual build. Build jobs run after recipe changes or daily at 03:17 UTC, pulling current official `master` and `release/9.1` source. When **both** scheduled builds pass, a new `nightly-YYYYMMDD` GitHub prerelease is published with the two Windows x64 static ZIPs; failed builds never publish. Re-running the same day never overwrites an existing Nightly. The official `fgs-YYYY.MM.DD` release remains separate. No upstream force-sync is performed on the fork's `master`.
 
 Build host is Linux because the established FFmpeg-Builds toolchain **cross-compiles Windows binaries**. Only Windows executable files are released. This is an FFmpeg build workflow, not an FGS application Release or BAT packager.
 
