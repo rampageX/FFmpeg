@@ -14,12 +14,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: fgs-ffmpeg-\${{ github.ref }}
+  group: fgs-ffmpeg-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    name: \${{ matrix.channel.name }} Windows x64
+    name: ${{ matrix.channel.name }} Windows x64
     runs-on: windows-2025
     timeout-minutes: 180
     strategy:
@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: FFmpeg/FFmpeg
-          ref: \${{ matrix.channel.ref }}
+          ref: ${{ matrix.channel.ref }}
           path: ffmpeg-src
           persist-credentials: false
           fetch-depth: 1
@@ -94,15 +94,15 @@ jobs:
       - name: Build FFmpeg and verify required capabilities
         shell: msys2 {0}
         run: |
-          bash fgs-build/.github/fgs/build.sh ffmpeg-src "\${{ matrix.channel.name }}"
+          bash fgs-build/.github/fgs/build.sh ffmpeg-src "${{ matrix.channel.name }}"
       - name: Package all required DLLs for portable use
         shell: pwsh
         run: |
-          python fgs-build/.github/fgs/package.py --prefix "stage/\${{ matrix.channel.name }}" --out "dist/FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64"
+          python fgs-build/.github/fgs/package.py --prefix "stage/${{ matrix.channel.name }}" --out "dist/FGS-FFmpeg-${{ matrix.channel.name }}-Windows-x64"
       - name: Check portable FFmpeg outside MSYS2 environment
         shell: pwsh
         run: |
-          $p = "dist/FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64"
+          $p = "dist/FGS-FFmpeg-${{ matrix.channel.name }}-Windows-x64"
           & "$p/ffmpeg.exe" -version
           if ($LASTEXITCODE -ne 0) { throw "Portable FFmpeg executable failed." }
           & "$p/ffprobe.exe" -version
@@ -110,8 +110,8 @@ jobs:
       - name: Upload tested Windows binaries
         uses: actions/upload-artifact@v4
         with:
-          name: FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64
-          path: dist/FGS-FFmpeg-\${{ matrix.channel.name }}-Windows-x64/
+          name: FGS-FFmpeg-${{ matrix.channel.name }}-Windows-x64
+          path: dist/FGS-FFmpeg-${{ matrix.channel.name }}-Windows-x64/
           if-no-files-found: error
           retention-days: 14
           compression-level: 6

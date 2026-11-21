@@ -66,13 +66,13 @@ test -s "$ff" && test -s "$fp"
 git rev-parse HEAD > "$prefix/upstream-commit.txt"
 printf 'Channel: %s\nUpstream branch: %s\n' "$channel" "$(git branch --show-current)" > "$prefix/build-info.txt"
 for name in fruc_vulkan libplacebo bwdif_cuda bwdif_vulkan; do
-    if ! grep -Eq "[[:space:]]\${name}[[:space:]]" "$prefix/filters.txt"; then
+    if ! grep -Eq "[[:space:]]${name}[[:space:]]" "$prefix/filters.txt"; then
         echo "ERROR: required filter missing: $name" >&2
         exit 1
     fi
 done
 for name in libsvtav1 libx264 libx265 hevc_nvenc av1_nvenc h264_nvenc; do
-    if ! grep -Eq "[[:space:]]\${name}[[:space:]]" "$prefix/encoders.txt"; then
+    if ! grep -Eq "[[:space:]]${name}[[:space:]]" "$prefix/encoders.txt"; then
         echo "ERROR: required encoder missing: $name" >&2
         exit 1
     fi
