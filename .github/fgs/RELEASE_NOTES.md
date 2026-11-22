@@ -1,12 +1,13 @@
-# FGS FFmpeg Windows x64 · Stable 9.1 + Master
+# FGS FFmpeg Windows x64 · Stable 9.1 + Master SVT-AV1-HDR
 
-Windows x64 **static** builds based on original FFmpeg, produced by the established `FFmpeg-Builds/FFmpeg-Builds` static MinGW toolchain.
+Official FFmpeg source, Windows x64 static executables, two separately verified channels. This release publishes the **user-accepted** Master SVT-AV1-HDR build without replacing the earlier 2026-11-22 release.
 
-- **Stable:** `9.1.git-FGS-47b92841e33b-20261121`, official `release/9.1` source.
-- **Master:** `N-129181-gb8c699bfbe-20261121`, official `master` source.
-- **Patch:** opt-in Vulkan/CUDA host-image-copy workaround (`disable_host_image_copy=1`) verified with Film Grain Studio's GPU film borders.
-- **Includes:** FFmpeg and FFprobe, `fruc_vulkan`, `libplacebo`, Vulkan/CUDA, NVENC and official SVT-AV1. No SVT-AV1-HDR fork.
-- **Validation:** both static Windows ZIPs passed CI filter/encoder checks, Windows PE import checks and Wine capability inspection. Stable 9.1 completed RTX 4080 PQ/HLG GPU-border and SVP/AI tests; SVT/AV1 also passed user verification.
-- **Artifacts:** one Stable ZIP and one Master ZIP; neither requires codec DLLs or an MSYS2 installation.
+- **Stable:** official FFmpeg `release/9.1` plus original `AOMediaCodec/SVT-AV1`. Its pinned build recipe is unchanged.
+- **Master:** official FFmpeg `master` plus `juliobbv-p/svt-av1-hdr` (pinned `0ce7e13af2396bf3bf06408a09f1138f82b01b28`), built with QuickFatHedgehog's pinned static dependency recipe.
+- **Both:** FGS Vulkan/CUDA interoperability patch `disable_host_image_copy=1` (opt-in, no change to the default).
+- **Included:** static `ffmpeg.exe`, `ffprobe.exe`, `fruc_vulkan`, `libplacebo`, Vulkan/CUDA, NVENC, libx264/libx265.
+- **Validation:** Windows x64 PE and static DLL-import checks, compiled filter/encoder checks, and actual two-frame 10-bit `libsvtav1` encode with `hbd-mds=1:film-grain=0:tune=6` and the `SVT-AV1-HDR` banner. Windows CI build run: https://github.com/rampageX/FFmpeg/actions/runs/45021608480.
+- **FGS:** user reports the new Master tested successfully with FGS. Configure the same Master `bin` directory as primary FFmpeg and enable "same as primary FFmpeg" for the optional special FFmpeg. SVT-HDR and FRUC can then use one executable.
+- **Fallback:** Stable does **not** include SVT-AV1-HDR; switching only to Stable will disable FGS's SVT-HDR-specific CPU path.
 
-Upstream FFmpeg development branches are fetched directly during each build. The `rampageX/FFmpeg` Git `master` is not overwritten by upstream. Separate daily Nightly prereleases start after their scheduled CI builds pass.
+Upstream FFmpeg `master` / `release/9.1` are fetched at build time; our repository `master` remains the build recipe, not a forced copy of upstream. Daily scheduled Nightly prereleases remain separate.

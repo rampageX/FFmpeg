@@ -22,7 +22,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          run=44921874163
+          run=45021608480
           if [ "$(gh run view "$run" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion)" != "success" ]; then
             echo "Refusing to publish an unverified FFmpeg build" >&2
             exit 1
@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           tag="$(tr -d "\r\n" < .github/fgs/release-version.txt)"
-          [[ "$tag" =~ ^fgs-[0-9]{4}[.][0-9]{2}[.][0-9]{2}$ ]] || { echo "Unexpected release tag: $tag" >&2; exit 1; }
+          [[ "$tag" =~ ^fgs-[0-9]{4}[.][0-9]{2}[.][0-9]{2}(-hdr)?$ ]] || { echo "Unexpected release tag: $tag" >&2; exit 1; }
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             echo "This release exists. Refusing to overwrite it." >&2
             exit 1
@@ -50,5 +50,5 @@ jobs:
             "dist/Stable/FGS-FFmpeg-Stable-Windows-x64-Static.zip" \
             "dist/Master/FGS-FFmpeg-Master-Windows-x64-Static.zip" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "FGS FFmpeg 9.1 Stable + Master · Windows x64" \
+            --title "FGS FFmpeg · Stable 9.1 + Master SVT-AV1-HDR · Windows x64" \
             --notes-file .github/fgs/RELEASE_NOTES.md --latest

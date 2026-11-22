@@ -14,7 +14,7 @@ This fork builds portable **static Windows x64** FFmpeg from official FFmpeg sou
 
 ## Build and checks
 
-Open **Actions > FGS FFmpeg Static Windows x64 > Run workflow** for a manual build. Build jobs run after recipe changes or daily at 03:17 UTC, pulling current official `master` and `release/9.1` source. When **both** scheduled builds pass, a new `nightly-YYYYMMDD` GitHub prerelease is published with the two Windows x64 static ZIPs; failed builds never publish. Re-running the same day never overwrites an existing Nightly. The official `fgs-YYYY.MM.DD` release remains separate. No upstream force-sync is performed on the fork's `master`.
+Open **Actions > FGS FFmpeg Static Windows x64 > Run workflow** for a manual build. Build jobs run after recipe changes or daily at 03:17 UTC, pulling current official `master` and `release/9.1` source. When **both** scheduled builds pass, a new `nightly-YYYYMMDD` GitHub prerelease is published with the two Windows x64 static ZIPs; failed builds never publish. Re-running the same day never overwrites an existing Nightly. Formal `fgs-YYYY.MM.DD` or `fgs-YYYY.MM.DD-hdr` releases are separate from Nightly; the original release is not overwritten. No upstream force-sync is performed on the fork's `master`.
 
 Build host is Linux because the established FFmpeg-Builds toolchain **cross-compiles Windows binaries**. Only Windows executable files are released. This is an FFmpeg build workflow, not an FGS application Release or BAT packager.
 
@@ -23,3 +23,11 @@ CI fails if the patch does not apply, if FFmpeg/FFprobe are absent, if the Windo
 Target RTX 4080 hardware validation is still required before replacing the stable FFmpeg used by FGS. An unpatched Gyan binary will not understand the new device option.
 
 No extra Git branches, upstream PRs, or FGS app changes are made.
+
+## Accepted SVT-AV1-HDR Master baseline (2026-11-22)
+
+- Build recipe commit: `0c3cf873039d29c95fc4445fa37aa0f1567349e4`.
+- Windows x64 CI: [run 45021608480](https://github.com/rampageX/FFmpeg/actions/runs/45021608480), both Stable and Master passed.
+- Master SVT-AV1-HDR actual two-frame 10-bit encoder check passed, and user confirmed FGS integration on their system.
+- The immutable accepted-build release is `fgs-2026.11.22-hdr`; its two static ZIPs come from the validated CI run. Old `fgs-2026.11.22` remains available.
+- The daily scheduled job uses the same pinned HDR dependency recipe but tracks current FFmpeg `master` source. Nightly builds may differ from this accepted baseline.
