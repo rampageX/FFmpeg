@@ -34,16 +34,34 @@ jobs:
     steps:
       - name: Checkout FGS build recipe
         uses: actions/checkout@v4
-      - name: Checkout proven static FFmpeg-Builds dependency recipe
+      - name: Checkout verified Stable static dependency recipe
+        if: matrix.channel.name == 'Stable'
         uses: actions/checkout@v4
         with:
           repository: FFmpeg-Builds/FFmpeg-Builds
           ref: 7f2a6b1050d302144de8366afa37a75e46f326aa
           path: builder
           persist-credentials: false
-      - name: Prepare pinned stock-SVT static builder and patch
+      - name: Checkout SVT-AV1-HDR Master dependency recipe
+        if: matrix.channel.name == 'Master'
+        uses: actions/checkout@v4
+        with:
+          repository: QuickFatHedgehog/FFmpeg-Builds-SVT-AV1-HDR
+          ref: 907df962d5ec749b62e0f92b36eb092bae1f7d0e
+          path: builder
+          persist-credentials: false
+      - name: Prepare verified official-SVT Stable build
+        if: matrix.channel.name == 'Stable'
         run: |
           python3 .github/fgs/prepare-builder.py
+          git apply --stat .github/fgs/host-image-copy.patch
+          bash -n builder/build.sh
+          grep -q 'GIT_BRANCH_OVERRIDE' builder/build.sh
+          grep -q 'FFMPEG_REPO_OVERRIDE' builder/build.sh
+      - name: Prepare SVT-AV1-HDR Master and require FGS patch
+        if: matrix.channel.name == 'Master'
+        run: |
+          python3 .github/fgs/prepare-master-hdr.py
           git apply --stat .github/fgs/host-image-copy.patch
           bash -n builder/build.sh
           grep -q 'GIT_BRANCH_OVERRIDE' builder/build.sh
@@ -66,7 +84,7 @@ jobs:
       - name: Install PE inspection tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y binutils-mingw-w64-x86-64 unzip file
+          sudo apt-get install -y binutils-mingw-w64-x86-64 unzip zip p7zip-full file
       - name: Inspect static Windows binaries and FGS capabilities
         env:
           CHANNEL: ${{ matrix.channel.name }}
@@ -122,8 +140,8 @@ jobs:
           Automated FGS FFmpeg Windows x64 static nightly.
 
           - **Stable:** official FFmpeg `release/9.1` with FGS Vulkan/CUDA interop patch.
-          - **Master:** official FFmpeg `master` with the same patch.
-          - **SVT-AV1:** official upstream library, not SVT-AV1-HDR.
+          - **Master:** official FFmpeg `master` source, SVT-AV1-HDR from the pinned QuickFatHedgehog dependency recipe, and the same FGS patch.
+          - **SVT-AV1:** Stable uses official stock SVT; Master uses the experimental SVT-AV1-HDR fork.
           - Builds fetch upstream branch HEAD each run; the `rampageX/FFmpeg` Git branch is not force-synced.
           - Both variants passed the Windows PE static-import check, Wine capability checks and CI build.
           - GPU-specific work still requires local acceptance before replacing FGS production dependencies.
