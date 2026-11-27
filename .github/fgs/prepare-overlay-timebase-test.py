@@ -20,6 +20,12 @@ s = s.replace(old, new, 1)
 old = '    --extra-version="\\$(date +%Y%m%d)"'
 assert s.count(old) == 1, "Version anchor changed"
 s = s.replace(old, '    --extra-version="OVTB-K6M2-\\$(date +%Y%m%d)"', 1)
+# The upstream builder normally deletes ffbuild after packaging.
+# Keep it for the candidate-only source verification and archive steps.
+old = 'cd -\n\nrm -rf ffbuild\n\nif [[ -n "$GITHUB_ACTIONS" ]]; then'
+new = 'cd -\n\n# Retain ffbuild for exact source verification in the caller.\n\nif [[ -n "$GITHUB_ACTIONS" ]]; then'
+assert s.count(old) == 1, "Post-package cleanup anchor changed"
+s = s.replace(old, new, 1)
 build.write_text(s, encoding="utf-8")
 p = root / "patches/ffmpeg/master.patch"
 p.write_bytes(p.read_bytes() + Path(".github/fgs/overlay-vulkan-timebase.patch").read_bytes())
