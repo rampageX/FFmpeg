@@ -1,0 +1,14 @@
+diff --git a/libavfilter/vf_overlay_vulkan.c b/libavfilter/vf_overlay_vulkan.c
+--- a/libavfilter/vf_overlay_vulkan.c
++++ b/libavfilter/vf_overlay_vulkan.c
+@@ -190,6 +190,10 @@ static int overlay_vulkan_config_output(AVFilterLink *outlink)
+     if (err < 0)
+         return err;
+ 
++    /* The output copies the main frame's properties. Keep framesync in
++     * the same time base as the output link so PTS and duration agree. */
++    s->fs.time_base = outlink->time_base = avctx->inputs[0]->time_base;
++
+     return ff_framesync_configure(&s->fs);
+ }
+ 

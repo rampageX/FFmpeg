@@ -1,0 +1,87 @@
+name: Overlay Vulkan timebase candidate K6M2
+on:
+  push:
+    branches: [test/overlay-vulkan-timebase]
+permissions:
+  contents: read
+  packages: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: QuickFatHedgehog/FFmpeg-Builds-SVT-AV1-HDR
+          ref: 907df962d5ec749b62e0f92b36eb092bae1f7d0e
+          path: builder
+          persist-credentials: false
+      - name: Pin exact failing FFmpeg source and inject overlay patch
+        run: |
+          python3 .github/fgs/prepare-overlay-timebase-test.py
+          bash -n builder/build.sh
+          cat .github/fgs/overlay-vulkan-timebase.patch
+      - run: bash builder/util/free_disk_space.sh
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Windows static candidate with existing HDR recipe
+        env:
+          FFMPEG_REPO_OVERRIDE: https://github.com/FFmpeg/FFmpeg.git
+          GIT_BRANCH_OVERRIDE: master
+        run: |
+          cd builder
+          bash build.sh win64 gpl
+      - name: Verify pinned source and actual applied patch
+        run: |
+          test "$(git -C builder/ffbuild/ffmpeg rev-parse HEAD)" = "359c82515228774eb683dffce9d623b6b4a2fa53"
+          git -C builder/ffbuild/ffmpeg diff --check
+          grep -F 's->fs.time_base = outlink->time_base = avctx->inputs[0]->time_base;' builder/ffbuild/ffmpeg/libavfilter/vf_overlay_vulkan.c
+          git -C builder/ffbuild/ffmpeg diff > Applied_Patches_K6M2.diff
+          printf 'Source=359c82515228774eb683dffce9d623b6b4a2fa53\nRecipe=%s\n' "$GITHUB_SHA" > BUILD_PROOF_K6M2.txt
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils-mingw-w64-x86-64 unzip zip p7zip-full file
+      - name: Verify static imports and codec capabilities
+        env:
+          CHANNEL: Master
+          SOURCE_REF: "359c82515228774eb683dffce9d623b6b4a2fa53"
+          ARTIFACT_DIR: builder/artifacts
+        run: bash .github/fgs/check-static.sh
+      - name: Stage isolated test package
+        run: |
+          mv FGS-FFmpeg-Master-Windows-x64-Static.zip FFmpeg_Overlay_Timebase_K6M2.zip
+          sha256sum FFmpeg_Overlay_Timebase_K6M2.zip >> BUILD_PROOF_K6M2.txt
+          git -C builder/ffbuild/ffmpeg archive --format=tar.gz --output="$GITHUB_WORKSPACE/FFmpeg_Upstream_Source_K6M2.tar.gz" HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FFmpeg_Overlay_Timebase_K6M2
+          path: |
+            FFmpeg_Overlay_Timebase_K6M2.zip
+            FFmpeg_Upstream_Source_K6M2.tar.gz
+            Applied_Patches_K6M2.diff
+            BUILD_PROOF_K6M2.txt
+          if-no-files-found: error
+          retention-days: 14
+  windows-smoke:
+    needs: build
+    runs-on: windows-2022
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: FFmpeg_Overlay_Timebase_K6M2
+      - name: Verify real Windows executable
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Expand-Archive -LiteralPath 'FFmpeg_Overlay_Timebase_K6M2.zip' -DestinationPath 'candidate'
+          $ff = @(Get-ChildItem -LiteralPath 'candidate' -Filter ffmpeg.exe -Recurse -File)
+          if ($ff.Count -ne 1) { throw 'Expected one ffmpeg executable' }
+          $version = & $ff[0].FullName -version
+          if ($LASTEXITCODE -ne 0 -or ($version -join ' ') -notmatch 'OVTB-K6M2') { throw 'Candidate identity check failed' }
+          $version
+          & $ff[0].FullName -hide_banner -nostdin -v error -f lavfi -i 'testsrc2=size=64x64:rate=24' -frames:v 24 -c:v libx264 -f null NUL
+          if ($LASTEXITCODE -ne 0) { throw 'Windows encode smoke failed' }
